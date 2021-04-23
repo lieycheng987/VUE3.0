@@ -168,7 +168,8 @@ methods: {
 >>`let p = new Proxy(targrt,handler)`
 >>`target`使用`Proxy`包装的对象(任意类型)  
 >>`handler`对象，其属性是当前执行一个操作时定义代理的行为的函数
->>```
+>>
+```
 let test = {
     name: "小红"
   };
@@ -179,8 +180,8 @@ let test = {
     }
   });
   console.log(test.name);
- ```
- >>可以设置一个私有变量
+```
+可以设置一个私有变量
  ```
  var target = {
    name: 'poetries',
