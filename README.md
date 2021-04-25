@@ -267,4 +267,88 @@ console.log(obj === wrapped) // false
   使 Vue 能够在 property 被访问或修改时执行依赖项跟踪和更改通知。每个 property 都被视为一个依赖项。首次渲染后，组件将跟踪一组依赖列表——即在  
   渲染过程中被访问的 property。反过来，组件就成为了其每个 property 的订阅者。当 Proxy 拦截到 set 操作时，该 property 将通知其所有订阅的组件  
   重新渲染。
+### 渲染函数
+  当浏览器读取代码时会建立一个DOM树的结点来追踪所有内容，而VUE通过建立虚拟的DOM树来追踪真实的DOM节点 ，`h()`函数返回的不是DOM元素本身，更准确   
+  名字可能是createNodeDescription ，它所包含的信息会告诉Vue页面上需要渲染什么样的节点，包括及其子结点的描述信息。所以等于说`h()`函数返回的是  
+  “虚拟节点”，称作`VNode`，虚拟DOM是我们对vue组件书建立起来的整个VNode树的称呼，而`h()`函数是用来创建Vnode的实用程序。其内部接受三个参数，分  
+  别是html的标签名例如div，Object(对象或者一个组件)，Function(异步组件或者是某个函数)，在或者是空的程序详情见下列
+  ```
+  // @returns {VNode}
+h(
+  // {String | Object | Function | null} tag
+  // 一个 HTML 标签名、一个组件、一个异步组件，或者 null。
+  // 使用 null 将会渲染一个注释。
+  //
+  // 必需的。
+  'div',
 
+  // {Object} props
+  // 与 attribute、prop 和事件相对应的对象。
+  // 我们会在模板中使用。
+  //
+  // 可选的。
+  {},
+
+  // {String | Array | Object} children
+  // 子 VNodes, 使用 `h()` 构建,
+  // 或使用字符串获取 "文本 Vnode" 或者
+  // 有 slot 的对象。
+  //
+  // 可选的。
+  [
+    'Some text comes first.',
+    h('h1', 'A headline'),
+    h(MyComponent, {
+      someProp: 'foobar'
+    })
+  ]
+)
+```
+所以我们可以创建想要的实列
+```
+const app = Vue.createApp({})
+
+/** Recursively get text from children nodes */
+function getChildrenTextContent(children) {
+  return children
+    .map(node => {
+      return typeof node.children === 'string'
+        ? node.children
+        : Array.isArray(node.children)
+        ? getChildrenTextContent(node.children)
+        : ''
+    })
+    .join('')
+}
+
+app.component('anchored-heading', {
+  render() {
+    // create kebab-case id from the text contents of the children
+    const headingId = getChildrenTextContent(this.$slots.default())
+      .toLowerCase()
+      .replace(/\W+/g, '-') // replace non-word characters with dash
+      .replace(/(^-|-$)/g, '') // remove leading and trailing dashes
+
+    return Vue.h('h' + this.level, [
+      Vue.h(
+        'a',
+        {
+          name: headingId,
+          href: '#' + headingId
+        },
+        this.$slots.default()
+      )
+    ])
+  },
+  props: {
+    level: {
+      type: Number,
+      required: true
+    }
+  }
+})
+```
+上面的程序中`getChildrenTextContent`函数其中判断`node.children`是否为字符串类型，如果不是继续判断是否是数组类型，如果是递归判断其子节点(类  
+似于如果满足组条件递归判断其子节点的各个方面一直往下判断类似与虚拟dom节点反复判断)，再将最后的如果是数组型的添加为字符串类型`render()`函数中  
+参数传入`$slot.default`此函数意味着拿到  所有非具名插槽的元素，再把所有字符串通过`.toLowerCase()`（`toUpperCase()`能全部转为大写）函数全部  
+转换为小写分别往里面进行添加在进行正则替换，在返回虚拟dom的节点从h标签开始分别进行渲染
