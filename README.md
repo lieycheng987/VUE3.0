@@ -267,7 +267,51 @@ console.log(obj === wrapped) // false
   使 Vue 能够在 property 被访问或修改时执行依赖项跟踪和更改通知。每个 property 都被视为一个依赖项。首次渲染后，组件将跟踪一组依赖列表——即在  
   渲染过程中被访问的 property。反过来，组件就成为了其每个 property 的订阅者。当 Proxy 拦截到 set 操作时，该 property 将通知其所有订阅的组件  
   重新渲染。
-### 渲染函数
+### 响应性基础
+可以使用`reactive`方法
+```
+import { reactive } from 'vue'
+
+// 响应式状态
+const state = reactive({
+  count: 0
+})
+```
+reactive 相当于 Vue 2.x 中的 Vue.observable() API ，为避免与 RxJS 中的 observables 混淆因此对其重命名。其相当于一个Proxy对象，该 API 返回  
+一个响应式的对象状态。该响应式转换是“深度转换”——它会影响嵌套对象传递的所有 property。Vue 中响应式状态的基本用例是我们可以在渲染期间使用它。因为  
+依赖跟踪的关系，当响应式状态改变时视图会自动更新。  
+这就是 Vue 响应性系统的本质。当从组件中的 data() 返回一个对象时，它在内部交由 reactive() 使其成为响应式对象。模板会被编译成能够使用这些响应式  
+`property` 的渲染函数。
+#### 创建独立的响应式值作为`refs`
+想象一下，我们有一个独立的原始值 (例如，一个字符串)，我们想让它变成响应式的。当然，我们可以创建一个拥有相同字符串 property 的对象，并将其传递给   
+reactive。Vue 为我们提供了一个可以做相同事情的方法 ——ref：
+```
+import { ref } from 'vue'
+
+const count = ref(0)
+console.log(count.value) // 0
+
+count.value++
+console.log(count.value) // 1
+```
+#### 使用`readonly`防止更改响应式对象只读属性 吧
+有时我们想跟踪响应式对象 (ref 或 reactive) 的变化，但我们也希望防止在应用程序的某个位置更改它。例如，当我们有一个被 provide 的响应式对象时，我  
+们不想让它在注入的时候被改变。为此，我们可以基于原始对象创建一个只读的 Proxy 对象：
+```
+import { reactive, readonly } from 'vue'
+
+const original = reactive({ count: 0 })
+
+const copy = readonly(original)
+
+// 在copy上转换original 会触发侦听器依赖
+
+original.count++
+
+// 转换copy 将导失败并导致警告
+copy.count++ // 警告: "Set operation on key 'count' failed: target is readonly."
+```
+## 渲染函数
   当浏览器读取代码时会建立一个DOM树的结点来追踪所有内容，而VUE通过建立虚拟的DOM树来追踪真实的DOM节点 ，`h()`函数返回的不是DOM元素本身，更准确   
   名字可能是createNodeDescription ，它所包含的信息会告诉Vue页面上需要渲染什么样的节点，包括及其子结点的描述信息。所以等于说`h()`函数返回的是  
   “虚拟节点”，称作`VNode`，虚拟DOM是我们对vue组件书建立起来的整个VNode树的称呼，而`h()`函数是用来创建Vnode的实用程序。其内部接受三个参数，分  
