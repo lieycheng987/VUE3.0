@@ -163,8 +163,10 @@ methods: {
 >- 检测其中某一个值是否发生变化
 > - 用跟踪 (track) 函数修改值
 > - 用触发 (trigger) 函数更新为最新的值
-
->> ### JS Proxy(代理)
+>> ### vue2.0中
+>> 通过el拿到挂载的组件，通过obiect.forEach遍历拿到每个值，然后通过obj.defineProperty（重新定义key）set函数设置新的值，通过个get函数返回  
+>> 通过发布者订阅者模式，告知其他，通过数组加入所有订阅者信息，监听函数发生改变就通知所有的订阅这改变（一个属性对应一个监听对象，）
+>> ### vue3.0JS Proxy(代理)
 >>`let p = new Proxy(targrt,handler)`
 >>`target`使用`Proxy`包装的对象(任意类型)  
 >>`handler`对象，其属性是当前执行一个操作时定义代理的行为的函数
